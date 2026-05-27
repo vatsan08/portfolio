@@ -558,9 +558,21 @@
       
       setupCursorHovers();
       
+      // Helper to dynamically resolve API endpoints depending on the origin/protocol
+      const getApiUrl = (endpoint) => {
+        const isDefaultPort = window.location.port === '3000';
+        const isFileProtocol = window.location.protocol === 'file:';
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        
+        if (isFileProtocol || (isLocalhost && !isDefaultPort)) {
+          return `http://localhost:3000${endpoint}`;
+        }
+        return endpoint;
+      };
+
       // 2. Authentication UI & Checks
       const checkAuth = () => {
-        fetch('/api/auth/status')
+        fetch(getApiUrl('/api/auth/status'), { credentials: 'include' })
           .then(res => res.json())
           .then(data => {
             if (data.loggedIn) {
@@ -588,10 +600,11 @@
           password: loginForm.password.value
         };
         
-        fetch('/api/auth/login', {
+        fetch(getApiUrl('/api/auth/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          credentials: 'include'
         })
         .then(res => {
           if (!res.ok) throw new Error('Invalid credentials or login error.');
@@ -608,7 +621,7 @@
       // Logout Button
       const logoutBtn = document.getElementById('logout-btn');
       logoutBtn.addEventListener('click', () => {
-        fetch('/api/auth/logout', { method: 'POST' })
+        fetch(getApiUrl('/api/auth/logout'), { method: 'POST', credentials: 'include' })
           .then(() => checkAuth());
       });
       
@@ -638,12 +651,12 @@
       // Load and Render Messages
       const loadMessages = () => {
         const listDiv = document.getElementById('contacts-list');
-        fetch('/api/admin/contacts')
+        fetch(getApiUrl('/api/admin/contacts'), { credentials: 'include' })
           .then(res => res.json())
           .then(messages => {
             if (messages.length === 0) {
-              listDiv.innerHTML = `<div style="font-family: var(--f-mono); color: var(--muted);">No messages found in log.</div>`;
-              return;
+               listDiv.innerHTML = `<div style="font-family: var(--f-mono); color: var(--muted);">No messages found in log.</div>`;
+               return;
             }
             listDiv.innerHTML = messages.map(msg => `
               <div class="msg-card">
@@ -666,7 +679,7 @@
       // Load and Render Projects List
       const loadProjectsList = () => {
         const listDiv = document.getElementById('projects-list');
-        fetch('/api/projects')
+        fetch(getApiUrl('/api/projects'))
           .then(res => res.json())
           .then(projects => {
             if (projects.length === 0) {
@@ -698,7 +711,7 @@
       // Load and Render Certifications List
       const loadCertificationsList = () => {
         const listDiv = document.getElementById('certs-list');
-        fetch('/api/certifications')
+        fetch(getApiUrl('/api/certifications'))
           .then(res => res.json())
           .then(certs => {
             if (certs.length === 0) {
@@ -749,10 +762,11 @@
         const url = id ? `/api/admin/projects/${id}` : '/api/admin/projects';
         const method = id ? 'PUT' : 'POST';
         
-        fetch(url, {
+        fetch(getApiUrl(url), {
           method: method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          credentials: 'include'
         })
         .then(res => {
           if (!res.ok) throw new Error('Failed to save project.');
@@ -797,7 +811,7 @@
       
       window.deleteProject = (id) => {
         if (!confirm('Are you sure you want to delete this project?')) return;
-        fetch(`/api/admin/projects/${id}`, { method: 'DELETE' })
+        fetch(getApiUrl(`/api/admin/projects/${id}`), { method: 'DELETE', credentials: 'include' })
           .then(res => {
             if (!res.ok) throw new Error('Failed to delete project.');
             loadProjectsList();
@@ -821,10 +835,11 @@
         const url = id ? `/api/admin/certifications/${id}` : '/api/admin/certifications';
         const method = id ? 'PUT' : 'POST';
         
-        fetch(url, {
+        fetch(getApiUrl(url), {
           method: method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          credentials: 'include'
         })
         .then(res => {
           if (!res.ok) throw new Error('Failed to save certification.');
@@ -865,7 +880,7 @@
       
       window.deleteCertification = (id) => {
         if (!confirm('Are you sure you want to delete this certification?')) return;
-        fetch(`/api/admin/certifications/${id}`, { method: 'DELETE' })
+        fetch(getApiUrl(`/api/admin/certifications/${id}`), { method: 'DELETE', credentials: 'include' })
           .then(res => {
             if (!res.ok) throw new Error('Failed to delete certification.');
             loadCertificationsList();

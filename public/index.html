@@ -1522,80 +1522,148 @@
          4. Full-Stack API Integration
          ------------------------------------------------------------- */
          
+      // Helper to dynamically resolve API endpoints depending on the origin/protocol
+      const getApiUrl = (endpoint) => {
+        const isDefaultPort = window.location.port === '3000';
+        const isFileProtocol = window.location.protocol === 'file:';
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        
+        if (isFileProtocol || (isLocalhost && !isDefaultPort)) {
+          return `http://localhost:3000${endpoint}`;
+        }
+        return endpoint;
+      };
+         
+      // Fallback Static Data for environments without backend server (like GitHub Pages)
+      const defaultProjects = [
+        {
+          index_num: '01',
+          badge: 'Hackathon Finalist',
+          title: 'CivicSense — Civic Issue Management',
+          description: 'Smart civic-issue platform enabling citizens to report and track city maintenance problems through a real-time interactive dashboard. Delivered working solution with scheduling and data visualization under Smart India Hackathon 2025 conditions.',
+          tech: ['Real-Time Tracking', 'Dashboard', 'Data Visualization', 'Agile Team']
+        },
+        {
+          index_num: '02',
+          badge: 'Published · GJEIIR 2026',
+          title: 'AI Skin Disease Diagnosis via CNNs',
+          description: 'Deep learning framework using ResNet50 and DenseNet201 for automated medical image classification. Flask web app with real-time prediction, confidence scores, Grad-CAM explainability, confusion matrix analysis, and secure user authentication.',
+          tech: ['Python', 'ResNet50', 'DenseNet201', 'Flask', 'CNNs', 'Grad-CAM']
+        },
+        {
+          index_num: '03',
+          badge: '',
+          title: 'Student Performance Tracker',
+          description: 'Full-stack academic management system with CRUD operations, subject and grade modules, database integration, and a responsive frontend. Spring Boot backend with structured architecture.',
+          tech: ['Spring Boot', 'MySQL', 'JavaScript', 'HTML / CSS']
+        },
+        {
+          index_num: '04',
+          badge: '',
+          title: 'E-Commerce Web Application',
+          description: 'Feature-rich e-commerce platform with product management, dynamic image upload and serving, AJAX-based form handling, and a fully responsive frontend. Spring Boot backend with MySQL.',
+          tech: ['Spring Boot', 'MySQL', 'AJAX', 'JavaScript', 'HTML / CSS']
+        }
+      ];
+
+      const defaultCertifications = [
+        { issuer: 'University of Michigan', name: 'Programming for Everybody — Python' },
+        { issuer: 'Infosys Springboard', name: 'ReactJS' },
+        { issuer: 'Infosys Springboard', name: 'Explore Machine Learning using Python' },
+        { issuer: 'University of Colorado', name: 'Everyday Excel (I, II & III)' },
+        { issuer: 'IBM SkillsBuild', name: 'From Learner to Builder: AI Agent Architect' },
+        { issuer: 'UCI Division of Continuing Education', name: 'Effective Problem-Solving and Decision-Making' },
+        { issuer: 'Deloitte Australia · Forage · Jan 2026', name: 'Data Analytics Job Simulation' },
+        { issuer: 'Tata Group · Forage · Jan 2026', name: 'Data Analytics Job Simulation' }
+      ];
+
+      // Render Projects Helper
+      const renderProjects = (projects) => {
+        const grid = document.querySelector('.projects-grid');
+        grid.innerHTML = '';
+        projects.forEach(proj => {
+          const card = document.createElement('div');
+          card.className = 'project-card reveal-item';
+          
+          const badgeHTML = proj.badge ? `<span class="project-badge">${proj.badge}</span>` : '';
+          const techArray = Array.isArray(proj.tech) ? proj.tech : (proj.tech ? proj.tech.split(',') : []);
+          const techHTML = techArray.map(t => `<span class="tech-pill">${t.trim()}</span>`).join('');
+          
+          card.innerHTML = `
+            <div class="project-card-top-bar"></div>
+            <div class="project-card-header">
+              <div class="project-meta">
+                <span class="project-index">${proj.index_num}</span>
+                ${badgeHTML}
+              </div>
+              <h3 class="project-title">${proj.title}</h3>
+              <p class="project-description">${proj.description}</p>
+            </div>
+            <div class="project-tech-list">
+              ${techHTML}
+            </div>
+          `;
+          grid.appendChild(card);
+          
+          // Enable custom cursor hovers for the new card
+          setupCursorHovers([card]);
+          
+          // Observe for scroll reveal
+          observer.observe(card);
+        });
+      };
+
+      // Render Certifications Helper
+      const renderCertifications = (certs) => {
+        const grid = document.querySelector('.certifications-grid');
+        grid.innerHTML = '';
+        certs.forEach(cert => {
+          const card = document.createElement('div');
+          card.className = 'cert-card reveal-item';
+          
+          card.innerHTML = `
+            <div class="cert-issuer">${cert.issuer}</div>
+            <h3 class="cert-name">${cert.name}</h3>
+          `;
+          grid.appendChild(card);
+          
+          // Enable custom cursor hovers
+          setupCursorHovers([card]);
+          
+          // Observe for scroll reveal
+          observer.observe(card);
+        });
+      };
+
       // Load Projects Dynamically
       const loadProjects = () => {
-        const grid = document.querySelector('.projects-grid');
-        fetch('/api/projects')
+        fetch(getApiUrl('/api/projects'))
           .then(res => {
             if (!res.ok) throw new Error('Failed to fetch projects');
             return res.json();
           })
           .then(projects => {
-            grid.innerHTML = '';
-            projects.forEach(proj => {
-              const card = document.createElement('div');
-              card.className = 'project-card reveal-item';
-              
-              const badgeHTML = proj.badge ? `<span class="project-badge">${proj.badge}</span>` : '';
-              const techHTML = proj.tech.map(t => `<span class="tech-pill">${t.trim()}</span>`).join('');
-              
-              card.innerHTML = `
-                <div class="project-card-top-bar"></div>
-                <div class="project-card-header">
-                  <div class="project-meta">
-                    <span class="project-index">${proj.index_num}</span>
-                    ${badgeHTML}
-                  </div>
-                  <h3 class="project-title">${proj.title}</h3>
-                  <p class="project-description">${proj.description}</p>
-                </div>
-                <div class="project-tech-list">
-                  ${techHTML}
-                </div>
-              `;
-              grid.appendChild(card);
-              
-              // Enable custom cursor hovers for the new card
-              setupCursorHovers([card]);
-              
-              // Observe for scroll reveal
-              observer.observe(card);
-            });
+            renderProjects(projects);
           })
           .catch(err => {
-            grid.innerHTML = `<div style="padding: 3rem; font-family: var(--f-mono); color: #ff5e5e;">Failed to load projects: ${err.message}</div>`;
+            console.warn('API unavailable; loading static fallback projects. Error:', err.message);
+            renderProjects(defaultProjects);
           });
       };
 
       // Load Certifications Dynamically
       const loadCertifications = () => {
-        const grid = document.querySelector('.certifications-grid');
-        fetch('/api/certifications')
+        fetch(getApiUrl('/api/certifications'))
           .then(res => {
             if (!res.ok) throw new Error('Failed to fetch certifications');
             return res.json();
           })
           .then(certs => {
-            grid.innerHTML = '';
-            certs.forEach(cert => {
-              const card = document.createElement('div');
-              card.className = 'cert-card reveal-item';
-              
-              card.innerHTML = `
-                <div class="cert-issuer">${cert.issuer}</div>
-                <h3 class="cert-name">${cert.name}</h3>
-              `;
-              grid.appendChild(card);
-              
-              // Enable custom cursor hovers
-              setupCursorHovers([card]);
-              
-              // Observe for scroll reveal
-              observer.observe(card);
-            });
+            renderCertifications(certs);
           })
           .catch(err => {
-            grid.innerHTML = `<div style="font-family: var(--f-mono); color: #ff5e5e;">Failed to load certifications: ${err.message}</div>`;
+            console.warn('API unavailable; loading static fallback certifications. Error:', err.message);
+            renderCertifications(defaultCertifications);
           });
       };
 
@@ -1615,7 +1683,7 @@
           message: document.getElementById('form-message').value
         };
         
-        fetch('/api/contact', {
+        fetch(getApiUrl('/api/contact'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
